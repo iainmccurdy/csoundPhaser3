@@ -1,19 +1,23 @@
 const csd = `
 <CsoundSynthesizer>
 <CsInstruments>
-ksmps = 512
+ksmps = 32
 
-maxalloc 1,1
+gkJumpGap init 10
 ;jumping sound
 instr 1
-kAmp     expseg   0.001, 0.005, 1, p3-0.005, 0.0001
-kCPS     expseg   150, 0.1, 105, p3-0.1, 1000
+if i(gkJumpGap)<0.1 then
+ turnoff
+endif
+gkJumpGap timeinsts
+kAmp     expseg   0.001, 0.005, 1, p3-0.005, 0.0001 ; amplitude envelope
+kCPS     expseg   150, 0.1, 105, p3-0.1, 1000       ; fundamental frequency
 aSig     vco2     kAmp * 10, kCPS, 4, 0.2
 kWobDep  expon    12, p3, 8
 aCF      expseg   200, 0.1, 100, p3-0.1, 10000
 aSig     buthp    aSig, aCF, 500
-aSig     butbp    aSig, 1200, 200         
-          outs     aSig, aSig
+aSig     butbp    aSig, 1200, 200      
+         outs     aSig, aSig
 endin
 
 ;white noise machine
@@ -229,7 +233,7 @@ kxPos lineto   kxPos, 0.02
 kMove changed kxPos
 
 kRate    randomi     1.5, 1.7, 2                    ; rate of footsteps
-kTrig    metro       kRate * 3                         ; create footstep triggers
+kTrig    metro       kRate * 4                         ; create footstep triggers
          schedkwhen  kTrig*kMove, 0, 0, p1+1, 0, 0.6, 1      ; 'heel' event
 kGap     random      0.05, 0.08                     ; time gap between 'heel' and 'toe'
          schedkwhen  kTrig*kMove, 0, 0, p1+1, kGap, 0.6, 0.2 ; create 'toe' event
@@ -275,35 +279,35 @@ endin
 giSfn    ftgen 0, 0, 8192, 10, 1               ; source waveform for the fof2 burbles (a sine wave)
 giAttDec ftgen 0, 0, 4096, 16, 0, 4096, 4, 1   ; envelope shape for fof2 grains
 
-instr  80
-
+instr  80 ; swallow
 ; BURBLES
-kFund   exprand  100       ; random pitch range of burbles
-kFund   +=       expon:k(100,p3,5000)       ; minimum burble pitch
-kris    =        0.03      ; 0.01
+kFund   exprand  70       ; random pitch range of burbles
+iFund   exprand  30
+kFund   +=       expon:k(100,p3,1000) + iFund       ; minimum burble pitch
+kris    =        0.05
 kdur    exprand  0.005      ; random duration range of burbles
 kdur    +=       0.01      ; minimum burble duration
 kDens   randomi  20, 50, 5 ; randomly wandering burble density
-kAmp    expon    1, p3, 0.0001      ; random amplitude range
+kAmp    expon    1, p3, 0.001      ; random amplitude range
 
 kGliss  exprand  0.1       ; burble glissando
 kGliss  +=       2       ; minimum burble glissando
 ;ares   fof2     xamp, xfund, xform, koct, kband, kris,  kdur,      kdec,      iolaps, \ ifna, ifnb,    itotdur, kphs, kgliss [, iskip]
 aBurble fof2     kAmp, kDens, kFund, 0,    20,    kris,  0.2+kdur,  kdur-kris,  200,      giSfn, giAttDec, 3600,   0, kGliss
-        outs     aBurble, aBurble ; send burbles to the output      
+        outs     aBurble, aBurble ; send burbles to the output
 endin
 
 
 instr 90 ; Bomb explosion
-kAmp   expon  8, p3, 0.001
-kDens  expon  5000, p3, 1
-aNoise dust2  kAmp, kDens
-aSub   reson  aNoise*1000, 20, 20, 1
-aNoise reson  aNoise*10, 100, 300, 1
-aMix   sum    aNoise + aSub
-aMix   clip   aMix, 0, 0.7
-aMix   tone   aMix, 1000
-       outs   aMix, aMix
+kAmp   expon  3, p3, 0.0001           ; amplitude envelope
+kDens  expon  5000, p3, 1             ; density envelope
+aNoise dust2  kAmp, kDens             ; create some dust noise
+aSub   reson  aNoise*500, 20, 20, 1   ; sub bass filtered band
+aMain  reson  aNoise*10, 100, 100, 1  ; main freq filtered band
+aMix   sum    aMain + aSub            ; mix sub and main frequency bands
+aMix   clip   aMix, 0, 0.95           ; clip the signal
+aMix   tone   aMix*4, 2000              ; lowpass filter the signal
+       outs   aMix, aMix        
 endin
 
 instr  100 ; game over
@@ -347,5 +351,7 @@ f0 z
 </CsScore>
 </CsoundSynthesizer>
 `
+csound.removeListener( "log" )
+
 csound.playCSD(csd);
         

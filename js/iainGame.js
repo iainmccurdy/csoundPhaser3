@@ -115,7 +115,7 @@ class GameScene extends Phaser.Scene {
         
     
         if (this.keys.W.isDown && this.player.body.touching.down){
-            csound.inputMessage("i1 0 1");
+            csound.inputMessage("i1 0 0.7");
             this.player.setVelocityY(-540);
             this.player.setGravityY(1040);
             this.stickToPlatform = false;
@@ -357,7 +357,7 @@ class GameScene extends Phaser.Scene {
 
     bombPickup(player, bomb)
     {
-        csound.inputMessage("i 80 0 0.5"); // swallow
+        csound.inputMessage("i 80 0 0.3"); // swallow
 
         bomb.disableBody(true, true);
         if(bomb.name == 'vertical')
@@ -398,9 +398,7 @@ class GameScene extends Phaser.Scene {
     cannonBallHitPlayer(cannonBall, player)
     {
         csound.inputMessage("i 70 0 1");
-
         this.gameOver();
-        
     }
 
     bombPlatformHit(activeBomb, platform)
@@ -446,7 +444,6 @@ class GameScene extends Phaser.Scene {
     gameOver()  //game over method
     {
         csound.inputMessage("i 100 0.5 1.1"); // game over
-
         console.log("GameOver");
         this.score = 0;
         this.physics.pause();
